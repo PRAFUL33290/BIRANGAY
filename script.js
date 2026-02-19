@@ -96,14 +96,25 @@ class ColorPowder {
         this.canvas = document.getElementById('particleCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.powderParticles = [];
+        this.lastPowderTime = 0;
+        this.powderThrottle = 50; // milliseconds
 
-        this.canvas.addEventListener('mousemove', (e) => this.createPowder(e));
+        this.canvas.addEventListener('mousemove', (e) => this.createPowderThrottled(e));
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            this.createPowder(e.touches[0]);
+            this.createPowderThrottled(e.touches[0]);
         });
 
         this.animatePowder();
+    }
+
+    createPowderThrottled(e) {
+        const now = Date.now();
+        if (now - this.lastPowderTime < this.powderThrottle) {
+            return;
+        }
+        this.lastPowderTime = now;
+        this.createPowder(e);
     }
 
     createPowder(e) {
@@ -188,41 +199,54 @@ class InteractiveEffects {
 
     createSparkles(element) {
         const rect = element.getBoundingClientRect();
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
         
         for (let i = 0; i < 10; i++) {
             setTimeout(() => {
                 const x = rect.left + Math.random() * rect.width;
                 const y = rect.top + Math.random() * rect.height;
                 
-                this.drawSparkle(ctx, x, y);
+                this.drawSparkle(x, y);
             }, i * 50);
         }
     }
 
-    drawSparkle(ctx, x, y) {
+    drawSparkle(x, y) {
         const colors = ['#FF69B4', '#FFD700', '#4169E1', '#32CD32', '#FF8C00'];
         const color = colors[Math.floor(Math.random() * colors.length)];
         
-        ctx.save();
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.8;
+        const sparkle = {
+            x: x,
+            y: y,
+            color: color,
+            opacity: 0.8,
+            life: 500
+        };
         
-        for (let i = 0; i < 4; i++) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate((Math.PI / 2) * i);
-            ctx.fillRect(0, -1, 15, 2);
-            ctx.restore();
-        }
+        const startTime = Date.now();
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < sparkle.life) {
+                const canvas = document.getElementById('particleCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                ctx.save();
+                ctx.globalAlpha = sparkle.opacity * (1 - elapsed / sparkle.life);
+                ctx.fillStyle = sparkle.color;
+                
+                for (let i = 0; i < 4; i++) {
+                    ctx.save();
+                    ctx.translate(sparkle.x, sparkle.y);
+                    ctx.rotate((Math.PI / 2) * i);
+                    ctx.fillRect(0, -1, 15, 2);
+                    ctx.restore();
+                }
+                
+                ctx.restore();
+                requestAnimationFrame(animate);
+            }
+        };
         
-        ctx.restore();
-        
-        // Fade out
-        setTimeout(() => {
-            ctx.clearRect(x - 20, y - 20, 40, 40);
-        }, 500);
+        animate();
     }
 
     pulseEffect(element) {
@@ -317,15 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const colorPowder = new ColorPowder();
     const interactiveEffects = new InteractiveEffects();
     const floatingHearts = new FloatingHearts();
-
-    // Add cursor trail effect
-    let trail = [];
-    document.addEventListener('mousemove', (e) => {
-        trail.push({ x: e.clientX, y: e.clientY, time: Date.now() });
-        
-        // Keep only recent positions
-        trail = trail.filter(point => Date.now() - point.time < 1000);
-    });
 
     console.log('🎨 Holi Festival Page Loaded - Let the colors dance! 🎉');
 });

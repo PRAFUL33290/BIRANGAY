@@ -61,8 +61,6 @@ header {
 
 .letter {
     display: inline-block;
-    animation: float 3s ease-in-out infinite;
-    animation-delay: calc(var(--i) * 0.2s);
     text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1);
     background: linear-gradient(45deg, var(--pink), var(--yellow), var(--blue), var(--green), var(--orange));
     -webkit-background-clip: text;
